@@ -1,0 +1,8 @@
+```{r}
+data = read.csv("cumulative.csv"); data
+```
+
+```{r}
+has_kepler_name = data$kepler_name != ""
+data = cbind(data, has_kepler_name)
+```
