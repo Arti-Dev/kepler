@@ -3,6 +3,9 @@ data = read.csv("cumulative.csv"); data
 ```
 
 ```{r}
-has_kepler_name = data$kepler_name != ""
-data = cbind(data, has_kepler_name)
+data = read.csv("cumulative.csv"); data
+
+actualData = data[, c("koi_period", "koi_impact")]
+km.out = kmeans(actualData, 2, nstart = 20)
+
 ```
