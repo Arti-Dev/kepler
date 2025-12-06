@@ -1,8 +1,337 @@
 ```{r}
-data = read.csv("cumulative.csv"); data
+library(corrplot)
 ```
 
 ```{r}
-has_kepler_name = data$kepler_name != ""
-data = cbind(data, has_kepler_name)
+data = read.csv("cumulative.csv")
+```
+
+```{r}
+keep_vars <- c(
+  "koi_disposition",
+  "koi_period", "koi_impact", "koi_duration", "koi_depth",
+  "koi_prad", "koi_teq", "koi_insol",
+  "koi_model_snr",
+  "koi_steff", "koi_slogg", "koi_srad",
+  "koi_kepmag",
+  "koi_score"
+)
+
+kepler_clean <- data[, keep_vars]; kepler_clean
+
+# optional to remove non-dispositioned
+kepler_clean <- kepler_clean[
+    kepler_clean$koi_disposition == "CONFIRMED" |
+    kepler_clean$koi_disposition == "FALSE POSITIVE",
+]
+
+kepler_clean$koi_disposition <- factor(kepler_clean$koi_disposition)
+
+summary(kepler_clean)
+
+```
+
+```{r}
+colSums(is.na(kepler_clean))
+```
+
+```{r}
+trim_limits <- function(x) {
+    q_low  <- quantile(x, 0.01, na.rm = TRUE)
+    q_high <- quantile(x, 0.99, na.rm = TRUE)
+    return(c(q_low, q_high))
+}
+```
+
+```{r}
+lims <- quantile(kepler_clean$koi_prad, c(0.01, 0.95), na.rm = TRUE)
+
+x <- kepler_clean$koi_prad
+x_trimmed <- x[ x >= lims[1] & x <= lims[2] ]
+
+# 1 = the radius of Earth.
+hist(x_trimmed,
+     main = "Planet Radius (trimmed to 1%-95%)",
+     xlab = "Planet Radius (Earth radii)",
+     col = "lightblue",
+     breaks = 30)
+
+
+lims <- quantile(kepler_clean$koi_period, c(0.01, 0.95), na.rm = TRUE)
+
+x <- kepler_clean$koi_period
+x_trimmed <- x[ x >= lims[1] & x <= lims[2] ]
+
+hist(x_trimmed,
+     main = "Orbital Period (trimmed to 1%-95%)",
+     xlab = "Orbital Period (days)",
+     col = "lightblue",
+     breaks = 30)
+
+
+lims <- quantile(kepler_clean$koi_depth, c(0.01, 0.9), na.rm = TRUE)
+
+x <- kepler_clean$koi_depth
+x_trimmed <- x[ x >= lims[1] & x <= lims[2] ]
+
+hist(x_trimmed,
+     main = "Transit Depth (trimmed to 1%-95%)",
+     xlab = "Transit Depth (ppm)",
+     col = "lightblue",
+     breaks = 30)
+
+lims <- quantile(kepler_clean$koi_teq, c(0.01, 0.99), na.rm = TRUE)
+
+x <- kepler_clean$koi_teq
+x_trimmed <- x[ x >= lims[1] & x <= lims[2] ]
+
+hist(x_trimmed,
+     main = "Equilibrium Temperature (trimmed to 1%-95%)",
+     xlab = "Equilibrium Temperature (K)",
+     col = "lightblue",
+     breaks = 30)
+
+
+x <- kepler_clean$koi_prad
+lims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+
+boxplot(koi_prad ~ koi_disposition,
+        data = kepler_clean,
+        main = "Planet Radius by Disposition (1%-95% y-trim)",
+        xlab = "Disposition",
+        ylab = "Planet Radius (Earth radii)",
+        ylim = lims)
+
+x <- kepler_clean$koi_depth
+lims <- quantile(x, c(0.01, 0.90), na.rm = TRUE)
+
+boxplot(koi_depth ~ koi_disposition,
+        data = kepler_clean,
+        main = "Transit Depth by Disposition (1%-90% y-trim)",
+        xlab = "Disposition",
+        ylab = "Transit Depth (ppm)",
+        ylim = lims)
+
+
+x <- kepler_clean$koi_model_snr
+lims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+
+boxplot(koi_model_snr ~ koi_disposition,
+        data = kepler_clean,
+        main = "Transit SNR by Disposition (1%-95% y-trim)",
+        xlab = "Disposition",
+        ylab = "Model SNR",
+        ylim = lims)
+
+
+x <- kepler_clean$koi_prad
+y <- kepler_clean$koi_depth
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.95), na.rm = TRUE)
+
+plot(x, y,
+     main = "Transit Depth vs Planet Radius (1%-95% trimmed)",
+     xlab = "Planet Radius (Earth radii)",
+     ylab = "Transit Depth (ppm)",
+     col  = "darkgray",
+     xlim = xlims,
+     ylim = ylims)
+
+
+x <- kepler_clean$koi_steff
+y <- kepler_clean$koi_srad
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.95), na.rm = TRUE)
+
+plot(x, y,
+     main = "Stellar Radius vs Effective Temperature (1%-95% trimmed)",
+     xlab = "Stellar Effective Temperature (K)",
+     ylab = "Stellar Radius (solar radii)",
+     col  = "darkgray",
+     xlim = xlims,
+     ylim = ylims)
+
+disp_table <- table(kepler_clean$koi_disposition)
+
+barplot(disp_table,
+        main = "Counts by Disposition",
+        xlab = "Disposition",
+        ylab = "Count",
+        col  = c("lightgreen", "salmon"))
+
+```
+
+```{r}
+x <- kepler_clean$koi_score
+lims <- quantile(x, c(0.01, 0.99), na.rm = TRUE)
+x_trimmed <- x[x >= lims[1] & x <= lims[2]]
+
+hist(x_trimmed,
+     main = "KOI Disposition Score (1%-99% trimmed)",
+     xlab = "koi_score",
+     col = "lightblue",
+     breaks = 30)
+
+
+x <- kepler_clean$koi_score
+lims <- quantile(x, c(0.01, 0.99), na.rm = TRUE)
+
+boxplot(koi_score ~ koi_disposition,
+        data = kepler_clean,
+        main = "KOI Score by Disposition",
+        xlab = "Disposition",
+        ylab = "KOI Score",
+        ylim = lims)
+
+confirmed_rows <- kepler_clean$koi_disposition == "CONFIRMED"
+false_rows     <- kepler_clean$koi_disposition == "FALSE POSITIVE"
+
+x <- kepler_clean$koi_depth
+y <- kepler_clean$koi_score
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
+
+plot(x[confirmed_rows], y[confirmed_rows],
+     col = "blue", pch = 16,
+     main = "KOI Score vs Transit Depth",
+     xlab = "Transit Depth (ppm)",
+     ylab = "KOI Score",
+     xlim = xlims,
+     ylim = ylims)
+
+points(x[false_rows], y[false_rows],
+       col = "red", pch = 16)
+
+legend("topright", legend = c("Confirmed", "False Positive"),
+       col = c("blue", "red"), pch = 16)
+
+
+confirmed_rows <- kepler_clean$koi_disposition == "CONFIRMED"
+false_rows     <- kepler_clean$koi_disposition == "FALSE POSITIVE"
+
+x <- kepler_clean$koi_model_snr
+y <- kepler_clean$koi_score
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
+
+plot(x[confirmed_rows], y[confirmed_rows],
+     col = "blue", pch = 16,
+     main = "KOI Score vs Transit SNR",
+     xlab = "Transit SNR",
+     ylab = "KOI Score",
+     xlim = xlims,
+     ylim = ylims)
+
+points(x[false_rows], y[false_rows],
+       col = "red", pch = 16)
+
+legend("topright", legend = c("Confirmed", "False Positive"),
+       col = c("blue", "red"), pch = 16)
+
+x <- kepler_clean$koi_prad
+y <- kepler_clean$koi_score
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
+
+plot(x[confirmed_rows], y[confirmed_rows],
+     col = "blue", pch = 16,
+     main = "KOI Score vs Planet Radius",
+     xlab = "Planet Radius (Earth radii)",
+     ylab = "KOI Score",
+     xlim = xlims,
+     ylim = ylims)
+
+points(x[false_rows], y[false_rows],
+       col = "red", pch = 16)
+
+legend("topright", legend = c("Confirmed", "False Positive"),
+       col = c("blue", "red"), pch = 16)
+
+
+x <- kepler_clean$koi_duration
+y <- kepler_clean$koi_score
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
+
+plot(x[confirmed_rows], y[confirmed_rows],
+     col = "blue", pch = 16,
+     main = "KOI Score vs Transit Duration",
+     xlab = "Transit Duration (hours)",
+     ylab = "KOI Score",
+     xlim = xlims,
+     ylim = ylims)
+
+points(x[false_rows], y[false_rows],
+       col = "red", pch = 16)
+
+legend("topright", legend = c("Confirmed", "False Positive"),
+       col = c("blue", "red"), pch = 16)
+
+x <- kepler_clean$koi_steff
+y <- kepler_clean$koi_score
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
+
+plot(x[confirmed_rows], y[confirmed_rows],
+     col = "blue", pch = 16,
+     main = "KOI Score vs Stellar Effective Temperature",
+     xlab = "Stellar Temperature (K)",
+     ylab = "KOI Score",
+     xlim = xlims,
+     ylim = ylims)
+
+points(x[false_rows], y[false_rows],
+       col = "red", pch = 16)
+
+legend("topright", legend = c("Confirmed", "False Positive"),
+       col = c("blue", "red"), pch = 16)
+
+x <- kepler_clean$koi_srad
+y <- kepler_clean$koi_score
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
+
+plot(x[confirmed_rows], y[confirmed_rows],
+     col = "blue", pch = 16,
+     main = "KOI Score vs Stellar Radius",
+     xlab = "Stellar Radius (solar radii)",
+     ylab = "KOI Score",
+     xlim = xlims,
+     ylim = ylims)
+
+points(x[false_rows], y[false_rows],
+       col = "red", pch = 16)
+
+legend("topright", legend = c("Confirmed", "False Positive"),
+       col = c("blue", "red"), pch = 16)
+
+x <- kepler_clean$koi_prad
+y <- kepler_clean$koi_srad
+
+xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
+ylims <- quantile(y, c(0.01, 0.95), na.rm = TRUE)
+
+plot(x[confirmed_rows], y[confirmed_rows],
+     col = "blue", pch = 16,
+     main = "Planet Radius vs Stellar Radius (colored by disposition)",
+     xlab = "Planet Radius (Earth radii)",
+     ylab = "Stellar Radius (solar radii)",
+     xlim = xlims,
+     ylim = ylims)
+
+points(x[false_rows], y[false_rows],
+       col = "red", pch = 16)
+
+legend("topright", legend = c("Confirmed", "False Positive"),
+       col = c("blue", "red"), pch = 16)
+
+
 ```
