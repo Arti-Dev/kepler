@@ -333,5 +333,9 @@ points(x[false_rows], y[false_rows],
 legend("topright", legend = c("Confirmed", "False Positive"),
        col = c("blue", "red"), pch = 16)
 
+```
 
+```{r}
+#actualData = data[, c("koi_period", "koi_impact")]
+#km.out = kmeans(actualData, 2, nstart = 20)
 ```
