@@ -1,5 +1,6 @@
 ```{r}
 library(corrplot)
+library(tidyr)
 ```
 
 ```{r}
@@ -33,12 +34,21 @@ summary(kepler_clean)
 
 ```{r}
 colSums(is.na(kepler_clean))
+
+# omit all NA values in the cleaned dataset
+kepler_clean <- kepler_clean %>% drop_na()
+
+colSums(is.na(kepler_clean)) 
 ```
 
 ```{r}
 trim_limits <- function(x) {
     q_low  <- quantile(x, 0.01, na.rm = TRUE)
-    q_high <- quantile(x, 0.99, na.rm = TRUE)
+    
+    
+    
+    
+        q_high <- quantile(x, 0.99, na.rm = TRUE)
     return(c(q_low, q_high))
 }
 ```
@@ -334,6 +344,105 @@ legend("topright", legend = c("Confirmed", "False Positive"),
        col = c("blue", "red"), pch = 16)
 
 ```
+
+```{r}
+# One-way ANOVA tests with categorical variable disposition
+
+# transit depth vs disposition
+c("Transit Depth vs Disposition")
+transit <- aov(koi_depth ~ koi_disposition, data = kepler_clean)
+summary(transit)
+plot(TukeyHSD(transit))
+
+
+# signal-to-noise vs disposition
+c("Signal-to-Noise vs Disposition")
+snr <- aov(koi_model_snr ~ koi_disposition, data = kepler_clean)
+summary(snr)
+plot(TukeyHSD(snr))
+
+
+# planet radius vs disposition
+c("Planet Radius vs Disposition")
+prad <- aov(koi_prad ~ koi_disposition, data = kepler_clean)
+summary(prad)
+plot(TukeyHSD(prad))
+
+
+# orbital period vs disposition
+c("Orbital Period vs Disposition")
+orbital_period <- aov(koi_period ~ koi_disposition, data = kepler_clean)
+summary(orbital_period)
+plot(TukeyHSD(orbital_period))
+
+
+# stellar temperature vs disposition
+c("Stellar Temperature vs Disposition")
+stellar_temp <- aov(koi_steff ~ koi_disposition, data = kepler_clean)
+summary(stellar_temp)
+plot(TukeyHSD(orbital_period))
+
+
+# transit duration vs disposition
+c("Transit Duration vs Disposition")
+transit_duration <- aov(koi_duration ~ koi_disposition, data = kepler_clean)
+summary(transit_duration)
+plot(TukeyHSD(transit_duration))
+
+
+# impact parameter vs disposition
+c("Impact Parameter vs Disposition")
+impact_param <- aov(koi_impact ~ koi_disposition, data = kepler_clean)
+summary(impact_param)
+plot(TukeyHSD(impact_param))
+
+
+# insolation flux vs disposition
+c("Insolation Flux vs Disposition")
+insol_flux <- aov(koi_insol ~ koi_disposition, data = kepler_clean)
+summary(insol_flux)
+plot(TukeyHSD(insol_flux))
+```
+
+
+```{r}
+# Two-way ANOVA tests 
+
+# transit depth affected by disposition and star temperature
+kepler_clean$teff_bin <- cut(kepler_clean$koi_steff, 
+                             breaks = c(-Inf, 4500, 5500, 6500, Inf),
+                             labels = c("Cool", "Sunlike", "Warm", "Hot"))
+star_temp <- aov(koi_depth ~ koi_disposition * teff_bin, data = kepler_clean)
+summary(star_temp)
+plot(TukeyHSD(star_temp))
+
+
+# transit duration affected by radius category and disposition
+kepler_clean$radius_group <- cut(kepler_clean$koi_prad, 
+                    breaks = c(-Inf, 1.25, 2, 4, Inf), 
+                    labels = c("Earth", "SuperEarth", "SubNeptune",
+                               "Neptune+"))
+duration_diffs <- aov(koi_duration ~ radius_group * koi_disposition, data = kepler_clean)
+summary(duration_diffs)
+plot(TukeyHSD(duration_diffs))
+
+
+# insolation flux affected by disposition and stellar radius bin
+kepler_clean$rstar_bin <- cut(kepler_clean$koi_srad, breaks = 4)
+irradiation_diffs <- aov(koi_insol ~ koi_disposition *rstar_bin, data = kepler_clean)
+summary(irradiation_diffs)
+plot(TukeyHSD(irradiation_diffs))
+```
+```{r}
+# Other ANOVA tests
+
+# control planet radius while testing affect of transit depth by disposition
+aov(koi_depth ~ koi_disposition + koi_prad, data = kepler_clean)
+
+# multivariable analysis
+manova(cbind(koi_depth, koi_duration, koi_prad) ~ koi_disposition, data = kepler_clean)
+```
+
 
 ```{r}
 #actualData = data[, c("koi_period", "koi_impact")]
