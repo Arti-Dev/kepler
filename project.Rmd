@@ -443,15 +443,106 @@ aov(koi_depth ~ koi_disposition + koi_prad, data = kepler_clean)
 manova(cbind(koi_depth, koi_duration, koi_prad) ~ koi_disposition, data = kepler_clean)
 ```
 
-
+### Testing to see if our data naturally fits into groups
+### K-means (k=2)
 ```{r}
-#actualData = data[, c("koi_period", "koi_impact")]
-#km.out = kmeans(actualData, 2, nstart = 20)
+# Reset kepler_clean
+keep_vars <- c(
+  "koi_disposition",
+  "koi_period", "koi_impact", "koi_duration", "koi_depth",
+  "koi_prad", "koi_teq", "koi_insol",
+  "koi_model_snr",
+  "koi_steff", "koi_slogg", "koi_srad",
+  "koi_kepmag",
+  "koi_score"
+)
+
+kepler_clean <- data[, keep_vars]
+kepler_clean <- kepler_clean %>% drop_na()
+
+kmeans_data = subset(kepler_clean, select = -koi_disposition)
+
+
+km.out = kmeans(kmeans_data, 2, nstart = 50)
+cluster = factor(km.out$cluster)
+
+kepler_with_clusters <- kepler_clean
+kepler_with_clusters <- cbind(kepler_with_clusters, cluster)
+
+cluster_counts <- table(
+  disposition = kepler_with_clusters$koi_disposition,
+  cluster     = kepler_with_clusters$cluster
+)
+
+print(cluster_counts)
+# That's pretty one-sided...
 
 ```
 
 
+```{r}
+# What if we scale the data?
+kmeans_data = scale(kmeans_data)
 
+km.out = kmeans(kmeans_data, 2, nstart = 50)
+cluster = factor(km.out$cluster)
+
+kepler_with_clusters <- kepler_clean
+kepler_with_clusters <- cbind(kepler_with_clusters, cluster)
+
+cluster_counts <- table(
+  disposition = kepler_with_clusters$koi_disposition,
+  cluster     = kepler_with_clusters$cluster
+)
+
+print(cluster_counts)
+
+library(ggplot2)
+
+ggplot(as.data.frame(cluster_counts),
+       aes(x = cluster, y = Freq, fill = disposition)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Confirmed vs False Positive Across K-means Clusters",
+    x = "Cluster",
+    y = "Count",
+    fill = "Disposition"
+  )
+
+```
+Around a third of false positives suddenly filled up the other cluster, with most of the confirmed points sticking to one cluster.
+
+### Hierarchical clustering
+```{r}
+par(mfrow = c(1,3))
+# should be scaled from the previous block
+# kmeans_data = scale(kmeans_data)
+hc.complete = hclust(dist(kmeans_data), method = "complete")
+hc.average = hclust(dist(kmeans_data), method = "average")
+hc.single = hclust(dist(kmeans_data), method = "single")
+plot(hc.complete)
+plot(hc.average)
+plot(hc.single)
+
+```
+```{r}
+# Cut the tree?
+cluster = factor(cutree(hc.average, h = 20))
+
+kepler_with_clusters <- kepler_clean
+kepler_with_clusters <- cbind(kepler_with_clusters, cluster)
+
+cluster_counts <- table(
+  disposition = kepler_with_clusters$koi_disposition,
+  cluster     = kepler_with_clusters$cluster
+)
+
+print(cluster_counts)
+
+# It's pretty obvious that this won't work well.
+# Overall it tells us that our data doesn't naturally fit into nice groups without labels. Supervised learning is the way to go!
+
+```
 
 ###Trees
 
