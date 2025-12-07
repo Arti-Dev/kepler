@@ -447,4 +447,101 @@ manova(cbind(koi_depth, koi_duration, koi_prad) ~ koi_disposition, data = kepler
 ```{r}
 #actualData = data[, c("koi_period", "koi_impact")]
 #km.out = kmeans(actualData, 2, nstart = 20)
+
+```
+
+
+
+
+###Trees
+
+```{r}
+library(tree)
+library(randomForest)
+library(ipred)
+library(gbm)
+set.seed(123)
+
+# 70/30 split of data
+n <- nrow(kepler_clean)
+train_idx <- sample(seq_len(n), size = 0.7 * n)
+
+train <- kepler_clean[train_idx, ]
+test  <- kepler_clean[-train_idx, ]
+```
+
+
+# Simple classification tree using all predictors
+```{r}
+tree_fit <- tree(koi_disposition ~ ., data = train)
+
+summary(tree_fit)
+plot(tree_fit)
+text(tree_fit, pretty = 0, cex = 0.7)
+title("Classification Tree for KOI Disposition")
+
+tree_pred <- predict(tree_fit, newdata = test, type = "class")
+tree_acc  <- mean(tree_pred == test$koi_disposition)
+
+tree_acc
+```
+
+#random forest
+```{r}
+rf_fit <- randomForest(koi_disposition ~ ., data = train, ntree = 300, importance = TRUE)
+rf_fit
+
+varImpPlot(rf_fit, main = "Random Forest Variable Importance")
+
+rf_pred <- predict(rf_fit, newdata = test, type = "class")
+rf_acc <- mean(rf_pred == test$koi_disposition)
+
+rf_acc
+```
+
+#bagging
+```{r}
+bag_fit <- bagging(koi_disposition ~ ., data = train, nbagg = 200)
+bag_fit
+
+bag_pred <- predict(bag_fit, newdata = test, type = "class")
+bag_acc <- mean(bag_pred == test$koi_disposition)
+
+bag_acc
+```
+
+#boosting
+```{r}
+boost_train <- train
+boost_test  <- test
+
+boost_train$y <- ifelse(boost_train$koi_disposition == "CONFIRMED", 1, 0)
+boost_test$y  <- ifelse(boost_test$koi_disposition == "CONFIRMED", 1, 0)
+
+boost_fit <- gbm(y ~ . - koi_disposition, data = boost_train, distribution = "bernoulli", n.trees = 2000, interaction.depth = 3,
+                 shrinkage = 0.01, n.minobsinnode = 10, cv.folds = 5, verbose = FALSE)
+
+best_iter <- gbm.perf(boost_fit, method = "cv")
+best_iter
+
+plot(boost_fit, i = "koi_score", n.trees = best_iter,
+main = "Boosting Partial Dependence: KOI Score")
+
+boost_prob <- predict(boost_fit, newdata = boost_test, n.trees = best_iter, type = "response")
+
+boost_pred <- ifelse(boost_prob > 0.5, "CONFIRMED", "FALSE POSITIVE")
+boost_pred <- factor(boost_pred, levels = levels(test$koi_disposition))
+
+boost_acc <- mean(boost_pred == test$koi_disposition)
+
+boost_acc
+```
+
+#final comparison
+```{r}
+data.frame(
+Model = c("Classification Tree", "Random Forest", "Bagging", "Boosting"),
+Accuracy = c(tree_acc, rf_acc, bag_acc, boost_acc)
+)
+
 ```
