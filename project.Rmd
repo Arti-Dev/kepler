@@ -182,6 +182,7 @@ score_vars <- c(
 
 score_df <- data[, score_vars]
 
+
 # Keep only CONFIRMED / FALSE POSITIVE
 score_df <- score_df[
   score_df$koi_disposition == "CONFIRMED" |
@@ -189,6 +190,12 @@ score_df <- score_df[
 ]
 
 score_df$koi_disposition <- factor(score_df$koi_disposition)
+
+score_df <- drop_na(score_df)
+
+confirmed_rows <- score_df$koi_disposition == "CONFIRMED"
+false_rows <- score_df$koi_disposition == "FALSE POSITIVE"
+
 
 x <- score_df$koi_score
 lims <- quantile(x, c(0.01, 0.99), na.rm = TRUE)
@@ -396,7 +403,7 @@ plot(TukeyHSD(orbital_period))
 c("Stellar Temperature vs Disposition")
 stellar_temp <- aov(koi_steff ~ koi_disposition, data = kepler_clean)
 summary(stellar_temp)
-plot(TukeyHSD(orbital_period))
+plot(TukeyHSD(stellar_temp))
 
 
 # transit duration vs disposition
@@ -449,6 +456,7 @@ irradiation_diffs <- aov(koi_insol ~ koi_disposition *rstar_bin, data = kepler_c
 summary(irradiation_diffs)
 plot(TukeyHSD(irradiation_diffs))
 ```
+
 ```{r}
 # Other ANOVA tests
 
@@ -462,21 +470,7 @@ manova(cbind(koi_depth, koi_duration, koi_prad) ~ koi_disposition, data = kepler
 ### Testing to see if our data naturally fits into groups
 ### K-means (k=2)
 ```{r}
-# Reset kepler_clean
-keep_vars <- c(
-  "koi_disposition",
-  "koi_period", "koi_impact", "koi_duration", "koi_depth",
-  "koi_prad", "koi_teq", "koi_insol",
-  "koi_model_snr",
-  "koi_steff", "koi_slogg", "koi_srad",
-  "koi_kepmag",
-  "koi_score"
-)
-
-kepler_clean <- data[, keep_vars]
-kepler_clean <- kepler_clean %>% drop_na()
-
-kmeans_data = subset(kepler_clean, select = -koi_disposition)
+kmeans_data <- subset(kepler_clean, select = -c(koi_disposition))
 
 
 km.out = kmeans(kmeans_data, 2, nstart = 50)
