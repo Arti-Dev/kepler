@@ -560,6 +560,7 @@ print(cluster_counts)
 
 ```
 
+
 ###Trees
 
 ```{r}
@@ -623,25 +624,24 @@ boost_train <- train
 boost_test  <- test
 
 boost_train$y <- ifelse(boost_train$koi_disposition == "CONFIRMED", 1, 0)
-boost_test$y  <- ifelse(boost_test$koi_disposition == "CONFIRMED", 1, 0)
+boost_test$y  <- ifelse(boost_test$koi_disposition  == "CONFIRMED", 1, 0)
 
-boost_fit <- gbm(y ~ . - koi_disposition, data = boost_train, distribution = "bernoulli", n.trees = 2000, interaction.depth = 3,
-                 shrinkage = 0.01, n.minobsinnode = 10, cv.folds = 5, verbose = FALSE)
+boost_fit <- gbm(y ~ . - koi_disposition, data = boost_train,distribution = "bernoulli",n.trees = 2000, interaction.depth = 3,
+                 shrinkage = 0.01, n.minobsinnode = 10, cv.folds = 5,verbose = FALSE)
 
 best_iter <- gbm.perf(boost_fit, method = "cv")
 best_iter
 
-plot(boost_fit, i = "koi_score", n.trees = best_iter,
-main = "Boosting Partial Dependence: KOI Score")
+plot(boost_fit, i = "koi_model_snr", n.trees = best_iter, main = "Boosting Partial Dependence: Transit SNR (koi_model_snr)")
 
-boost_prob <- predict(boost_fit, newdata = boost_test, n.trees = best_iter, type = "response")
+boost_prob <- predict(boost_fit, newdata = boost_test, n.trees = best_iter, type    = "response")
 
 boost_pred <- ifelse(boost_prob > 0.5, "CONFIRMED", "FALSE POSITIVE")
 boost_pred <- factor(boost_pred, levels = levels(test$koi_disposition))
 
 boost_acc <- mean(boost_pred == test$koi_disposition)
-
 boost_acc
+
 ```
 
 #final comparison
