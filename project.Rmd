@@ -470,7 +470,7 @@ manova(cbind(koi_depth, koi_duration, koi_prad) ~ koi_disposition, data = kepler
 ### Testing to see if our data naturally fits into groups
 ### K-means (k=2)
 ```{r}
-kmeans_data <- subset(kepler_clean, select = -c(koi_disposition))
+kmeans_data <- subset(kepler_clean, select = -c(koi_disposition, teff_bin, radius_group, rstar_bin))
 
 
 km.out = kmeans(kmeans_data, 2, nstart = 50)
