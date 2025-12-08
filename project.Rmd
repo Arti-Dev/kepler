@@ -14,8 +14,7 @@ keep_vars <- c(
   "koi_prad", "koi_teq", "koi_insol",
   "koi_model_snr",
   "koi_steff", "koi_slogg", "koi_srad",
-  "koi_kepmag",
-  "koi_score"
+  "koi_kepmag"
 )
 
 kepler_clean <- data[, keep_vars]; kepler_clean
@@ -36,7 +35,7 @@ summary(kepler_clean)
 colSums(is.na(kepler_clean))
 
 # omit all NA values in the cleaned dataset
-kepler_clean <- kepler_clean %>% drop_na()
+kepler_clean <- drop_na(kepler_clean)
 
 colSums(is.na(kepler_clean)) 
 ```
@@ -174,7 +173,24 @@ barplot(disp_table,
 ```
 
 ```{r}
-x <- kepler_clean$koi_score
+score_vars <- c(
+  "koi_disposition",
+  "koi_depth", "koi_model_snr", "koi_prad",
+  "koi_duration", "koi_steff", "koi_srad",
+  "koi_score"
+)
+
+score_df <- data[, score_vars]
+
+# Keep only CONFIRMED / FALSE POSITIVE
+score_df <- score_df[
+  score_df$koi_disposition == "CONFIRMED" |
+  score_df$koi_disposition == "FALSE POSITIVE",
+]
+
+score_df$koi_disposition <- factor(score_df$koi_disposition)
+
+x <- score_df$koi_score
 lims <- quantile(x, c(0.01, 0.99), na.rm = TRUE)
 x_trimmed <- x[x >= lims[1] & x <= lims[2]]
 
@@ -185,11 +201,11 @@ hist(x_trimmed,
      breaks = 30)
 
 
-x <- kepler_clean$koi_score
+x <- score_df$koi_score
 lims <- quantile(x, c(0.01, 0.99), na.rm = TRUE)
 
 boxplot(koi_score ~ koi_disposition,
-        data = kepler_clean,
+        data = score_df,
         main = "KOI Score by Disposition",
         xlab = "Disposition",
         ylab = "KOI Score",
@@ -198,8 +214,8 @@ boxplot(koi_score ~ koi_disposition,
 confirmed_rows <- kepler_clean$koi_disposition == "CONFIRMED"
 false_rows     <- kepler_clean$koi_disposition == "FALSE POSITIVE"
 
-x <- kepler_clean$koi_depth
-y <- kepler_clean$koi_score
+x <- score_df$koi_depth
+y <- score_df$koi_score
 
 xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
 ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
@@ -222,8 +238,8 @@ legend("topright", legend = c("Confirmed", "False Positive"),
 confirmed_rows <- kepler_clean$koi_disposition == "CONFIRMED"
 false_rows     <- kepler_clean$koi_disposition == "FALSE POSITIVE"
 
-x <- kepler_clean$koi_model_snr
-y <- kepler_clean$koi_score
+x <- score_df$koi_model_snr
+y <- score_df$koi_score
 
 xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
 ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
@@ -242,8 +258,8 @@ points(x[false_rows], y[false_rows],
 legend("topright", legend = c("Confirmed", "False Positive"),
        col = c("blue", "red"), pch = 16)
 
-x <- kepler_clean$koi_prad
-y <- kepler_clean$koi_score
+x <- score_df$koi_prad
+y <- score_df$koi_score
 
 xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
 ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
@@ -263,8 +279,8 @@ legend("topright", legend = c("Confirmed", "False Positive"),
        col = c("blue", "red"), pch = 16)
 
 
-x <- kepler_clean$koi_duration
-y <- kepler_clean$koi_score
+x <- score_df$koi_duration
+y <- score_df$koi_score
 
 xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
 ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
@@ -283,8 +299,8 @@ points(x[false_rows], y[false_rows],
 legend("topright", legend = c("Confirmed", "False Positive"),
        col = c("blue", "red"), pch = 16)
 
-x <- kepler_clean$koi_steff
-y <- kepler_clean$koi_score
+x <- score_df$koi_steff
+y <- score_df$koi_score
 
 xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
 ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
@@ -303,8 +319,8 @@ points(x[false_rows], y[false_rows],
 legend("topright", legend = c("Confirmed", "False Positive"),
        col = c("blue", "red"), pch = 16)
 
-x <- kepler_clean$koi_srad
-y <- kepler_clean$koi_score
+x <- score_df$koi_srad
+y <- score_df$koi_score
 
 xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
 ylims <- quantile(y, c(0.01, 0.99), na.rm = TRUE)
@@ -323,8 +339,8 @@ points(x[false_rows], y[false_rows],
 legend("topright", legend = c("Confirmed", "False Positive"),
        col = c("blue", "red"), pch = 16)
 
-x <- kepler_clean$koi_prad
-y <- kepler_clean$koi_srad
+x <- score_df$koi_prad
+y <- score_df$koi_srad
 
 xlims <- quantile(x, c(0.01, 0.95), na.rm = TRUE)
 ylims <- quantile(y, c(0.01, 0.95), na.rm = TRUE)
