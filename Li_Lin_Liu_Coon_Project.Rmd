@@ -376,6 +376,7 @@ c("Transit Depth vs Disposition")
 transit <- aov(koi_depth ~ koi_disposition, data = kepler_clean)
 summary(transit)
 plot(TukeyHSD(transit))
+title("One-way ANOVA for Transit Depth", line = 0.5)
 
 
 # signal-to-noise vs disposition
@@ -383,6 +384,7 @@ c("Signal-to-Noise vs Disposition")
 snr <- aov(koi_model_snr ~ koi_disposition, data = kepler_clean)
 summary(snr)
 plot(TukeyHSD(snr))
+title("One-way ANOVA for Signal-to-Noise Ratio", line = 0.5)
 
 
 # planet radius vs disposition
@@ -390,6 +392,7 @@ c("Planet Radius vs Disposition")
 prad <- aov(koi_prad ~ koi_disposition, data = kepler_clean)
 summary(prad)
 plot(TukeyHSD(prad))
+title("One-way ANOVA for Planet Radius", line = 0.5)
 
 
 # orbital period vs disposition
@@ -397,6 +400,7 @@ c("Orbital Period vs Disposition")
 orbital_period <- aov(koi_period ~ koi_disposition, data = kepler_clean)
 summary(orbital_period)
 plot(TukeyHSD(orbital_period))
+title("One-way ANOVA for Orbital Period", line = 0.5)
 
 
 # stellar temperature vs disposition
@@ -404,6 +408,7 @@ c("Stellar Temperature vs Disposition")
 stellar_temp <- aov(koi_steff ~ koi_disposition, data = kepler_clean)
 summary(stellar_temp)
 plot(TukeyHSD(stellar_temp))
+title("One-way ANOVA for Stellar Temperature", line = 0.5)
 
 
 # transit duration vs disposition
@@ -411,6 +416,7 @@ c("Transit Duration vs Disposition")
 transit_duration <- aov(koi_duration ~ koi_disposition, data = kepler_clean)
 summary(transit_duration)
 plot(TukeyHSD(transit_duration))
+title("One-way ANOVA for Transit Duration", line = 0.5)
 
 
 # impact parameter vs disposition
@@ -418,6 +424,7 @@ c("Impact Parameter vs Disposition")
 impact_param <- aov(koi_impact ~ koi_disposition, data = kepler_clean)
 summary(impact_param)
 plot(TukeyHSD(impact_param))
+title("One-way ANOVA for Impact Parameter", line = 0.5)
 
 
 # insolation flux vs disposition
@@ -425,6 +432,7 @@ c("Insolation Flux vs Disposition")
 insol_flux <- aov(koi_insol ~ koi_disposition, data = kepler_clean)
 summary(insol_flux)
 plot(TukeyHSD(insol_flux))
+title("One-way ANOVA for Insolation", line = 0.5)
 ```
 
 
@@ -438,6 +446,7 @@ kepler_clean$teff_bin <- cut(kepler_clean$koi_steff,
 star_temp <- aov(koi_depth ~ koi_disposition * teff_bin, data = kepler_clean)
 summary(star_temp)
 plot(TukeyHSD(star_temp))
+title("Transit Depth by Disposition and Star Temperature", line = 0.5)
 
 
 # transit duration affected by radius category and disposition
@@ -448,6 +457,7 @@ kepler_clean$radius_group <- cut(kepler_clean$koi_prad,
 duration_diffs <- aov(koi_duration ~ radius_group * koi_disposition, data = kepler_clean)
 summary(duration_diffs)
 plot(TukeyHSD(duration_diffs))
+title("Transit Duration by Disposition and Radius Group", line = 0.5)
 
 
 # insolation flux affected by disposition and stellar radius bin
@@ -455,6 +465,7 @@ kepler_clean$rstar_bin <- cut(kepler_clean$koi_srad, breaks = 4)
 irradiation_diffs <- aov(koi_insol ~ koi_disposition *rstar_bin, data = kepler_clean)
 summary(irradiation_diffs)
 plot(TukeyHSD(irradiation_diffs))
+title("Insolation Flux by Disposition and Stellar Radius", line = 0.5)
 ```
 
 ```{r}
